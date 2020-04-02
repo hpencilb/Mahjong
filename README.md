@@ -11,7 +11,7 @@
 > 🀢 🀣 🀤 🀥 🀦 🀧 🀨 🀩 🀪 
 > 🀫
 
-建议把 Terminal 的描述文件字体设置为 Apple Symbols 40 点，字符间距改为 0.75，运行效果如下。
+macOS 好像会自动把🀄️变成 emoji ，建议把 Terminal 的描述文件字体设置为 Apple Symbols 40 点，字符间距改为 0.75，在 Terminal 里运行 Game.py 启动，运行效果如下。
 
 ![01](README.assets/01.png)
 
