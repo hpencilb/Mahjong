@@ -1,6 +1,6 @@
 import random
 import time
-from Player import Player
+from Player import Player, Bot
 
 WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"
 TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"
@@ -145,13 +145,26 @@ class Game:
             self.__player[i].sort()
         self.show()
 
+    def restart(self):
+        self.__hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
+        self.__river = []
+        for i in self.__player:
+            i.restart()
+
 
 if __name__ == "__main__":
     # print(DICT)
-    p0 = Player()
-    p1 = Player()
-    p2 = Player('Gamer')
-    p3 = Player()
-    g = Game([p0, p1, p2, p3])
-    g.game()
+    gamer_name = input('输入你的名字：')
+    p0 = Bot('Bot 0')
+    p1 = Bot('Bot 1')
+    p2 = Player(gamer_name)
+    p3 = Bot('Bot 2')
+    game_state = True
+    while game_state:
+        g = Game([p0, p1, p2, p3])
+        g.game()
+        flag = input('输入0结束，输入其他继续。')
+        if flag == '0':
+            game_state = False
+        g.restart()
     # print(g._Game__key)

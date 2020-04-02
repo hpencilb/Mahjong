@@ -106,16 +106,13 @@ class Player:
         self.hula = False
 
     def play(self):
-        if self.name == 'Default':
-            return self.hand.pop(self.hand.index(random.choice(self.hand)))
-        else:
-            for i in range(len(self.hand)):
-                print(f'{i}-{self.hand[i]}', end=' ')
-                if self.hand[i] != '🀄':
-                    print(' ', end='')
-            print('\r')
-            item = int(input('选择你要出的牌：'))
-            return self.hand.pop(item)
+        for i in range(len(self.hand)):
+            print(f'{i}-{self.hand[i]}', end=' ')
+            if self.hand[i] != '🀄':
+                print(' ', end='')
+        print('\r')
+        item = int(input('选择你要出的牌：'))
+        return self.hand.pop(item)
 
     def sort(self):
         for i in range(len(self.hand) - 1):
@@ -130,6 +127,10 @@ class Player:
         hand_list.sort()
         self.hula = hulemei(hand_list)
 
+    def restart(self):
+        self.hand = []
+        self.hula = False
+
     @property
     def name(self):
         return self.__name
@@ -139,13 +140,24 @@ class Player:
         self.__name = name
 
 
+class Bot(Player):
+    def __init__(self, name='Bot'):
+        super().__init__(name)
+
+    def play(self):
+        return self.hand.pop(self.hand.index(random.choice(self.hand)))
+
+
 if __name__ == '__main__':
-    p = Player()
+    p = Bot()
     # for i in range(20):
     #     p.hand = random.choices(hill, k=14)
     # p.hand = ['🀈', '🀈', '🀉', '🀊', '🀋', '🀖', '🀗', '🀘', '🀛', '🀜', '🀝', '🀃', '🀃', '🀃']
     # p.hand = ['🀉', '🀉', '🀑', '🀒', '🀓', '🀔', '🀖', '🀛', '🀜', '🀝', '🀆', '🀆', '🀆', '🀕']
     p.hand = ['🀈', '🀈', '🀍', '🀍', '🀎', '🀎', '🀏', '🀏', '🀙', '🀚', '🀛', '🀟', '🀟', '🀟']
+    # for i in range(10):
+    #     p.play()
+    #     print(p.hand)
     p.check()
     print(p.hula)
     print(p.hand)
