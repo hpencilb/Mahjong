@@ -25,12 +25,13 @@ class Game:
         while self.state:
             if count >= 4:
                 count = 0
-            self.draw(self.__player[count])
-            self.show()
-            # TODO 碰吃杠点炮规则没写
-            if self.__player[count].hula:
-                self.state = False
-                print(f'Player {count} won!')
+            # TODO 听牌检测没写
+            if self.draw(self.__player[count]):
+                # 自摸
+                break
+            # TODO 碰吃杠规则没写
+            if self.if_dianpao(count):
+                break
             # TODO 结算没写
             count += 1
             # 没牌可摸时结束
@@ -38,34 +39,43 @@ class Game:
                 self.state = False
                 print('========= Game Over =========')
 
-    def start(self):
-        # 发13张牌
-        j = 0
-        while j < 13:
-            for i in range(4):
-                self.__player[i].hand.append(self.__hill.pop(self.__hill.index(random.choice(self.__hill))))
-            self.show()
-            j += 1
-        # 理牌
-        for i in range(4):
-            # sorted_dict = map(lambda x: {x: info[x]}, roles)
-            self.__player[i].sort()
-        self.show()
+    def if_dianpao(self, n):
+        li = [0, 1, 2, 3]
+        li.remove(n)
+        for i in li:
+            self.__player[i].hand.append(self.__river[-1])
+            self.__player[i].check()
+            if self.__player[i].hula:
+                self.state = False
+                print(f'Player {self.__player[i].name} won!')
+                return True
+            else:
+                self.__player[i].hand.remove(self.__river[-1])
+                self.__player[i].sort()
 
     def draw(self, player):
+        # 先摸到牌
         player.hand.append(self.__hill.pop(self.__hill.index(random.choice(self.__hill))))
-        player.check()
         self.show()
-        # TODO 出牌没写
-        self.__river.append(player.hand.pop(player.hand.index(random.choice(player.hand))))
+        # 看一下胡没胡
+        player.check()
+        if player.hula:
+            self.state = False
+            print(f'Player {player.name} won!')
+            return True
+        item = player.play()
+        self.__river.append(item)
+        # 理好牌
         player.sort()
+        self.show()
+        return False
 
     def show(self):
         # TODO 盖牌输出没写
         # 清屏
         print('\x1b[2J\x1b[0;0H')
         # 输出0号玩家的牌
-        print(' ' * 25, end='')
+        print('\x1b[25C', end='')
         for i in self.__player[0].hand:
             if i == '🀄':
                 print(i, end='')
@@ -112,7 +122,7 @@ class Game:
         # 空行
         print('\r\x1b[1B')
         # 输出自己的牌
-        print(' ' * 25, end='')
+        print('\x1b[25C', end='')
         for i in self.__player[2].hand:
             if i == '🀄':
                 print(i, end='')
@@ -121,12 +131,26 @@ class Game:
         print('\r')
         time.sleep(0.5)
 
+    def start(self):
+        # 发13张牌
+        j = 0
+        while j < 13:
+            for i in range(4):
+                self.__player[i].hand.append(self.__hill.pop(self.__hill.index(random.choice(self.__hill))))
+            self.show()
+            j += 1
+        # 理牌
+        for i in range(4):
+            # sorted_dict = map(lambda x: {x: info[x]}, roles)
+            self.__player[i].sort()
+        self.show()
+
 
 if __name__ == "__main__":
     # print(DICT)
     p0 = Player()
     p1 = Player()
-    p2 = Player()
+    p2 = Player('Gamer')
     p3 = Player()
     g = Game([p0, p1, p2, p3])
     g.game()

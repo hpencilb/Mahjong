@@ -91,10 +91,22 @@ def hulemei(hand_list):
 
 
 class Player:
-    def __init__(self):
-        self.peng = None
+    def __init__(self, name='Default'):
+        self.__name = name
         self.hand = []
         self.hula = False
+
+    def play(self):
+        if self.__name == 'Default':
+            return self.hand.pop(self.hand.index(random.choice(self.hand)))
+        else:
+            for i in range(len(self.hand)):
+                print(f'{i}-{self.hand[i]}', end=' ')
+                if self.hand[i] != '🀄':
+                    print(' ', end='')
+            print('\r')
+            item = int(input('选择你要出的牌：'))
+            return self.hand.pop(item)
 
     def sort(self):
         for i in range(len(self.hand) - 1):
@@ -105,11 +117,9 @@ class Player:
                     self.hand[j + 1] = tmp
 
     def check(self):
-        self.sort()
         hand_list = [DICT[i] for i in self.hand]
+        hand_list.sort()
         self.hula = hulemei(hand_list)
-        print(self.hand, end=' ')
-        print(self.hula)
 
 
 if __name__ == '__main__':
