@@ -1,10 +1,10 @@
 import random
 import copy
 
-WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"
-TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"
-TONG = "🀙🀚🀛🀜🀝🀞🀟🀠🀡"
-ELSE = "🀀🀁🀂🀃🀄🀅🀆"
+WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"  # 0-8
+TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"  # 9-17
+TONG = "🀙🀚🀛🀜🀝🀞🀟🀠🀡"  # 18-26
+ELSE = "🀀🀁🀂🀃🀄🀅🀆"  # 27-33
 DICT = dict(zip(WAN + TIAO + TONG + ELSE, range(34)))
 hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
 
@@ -29,6 +29,13 @@ def has_shunzi(l_s):
         else:
             count += 1
     # 再看是不是顺子
+    if temp[0] >= 27:
+        return False
+    if len(temp) == 3:
+        if (temp[0] == temp[1] and temp[0] == temp[2]) or (temp[0] == temp[1] - 1 and temp[0] == temp[2] - 2):
+            return True
+        else:
+            return False
     if len(temp) > 3:
         s = list(set(l_s))
         s.sort()
@@ -47,7 +54,9 @@ def has_quetou(l_q):
         if l_q[i] == l_q[i + 1]:
             temp.remove(l_q[i])
             temp.remove(l_q[i])
-            if has_shunzi(temp):
+            if len(temp) == 0:
+                return True
+            elif has_shunzi(temp):
                 return True
             else:
                 temp = copy.deepcopy(l_q)
@@ -97,7 +106,7 @@ class Player:
         self.hula = False
 
     def play(self):
-        if self.__name == 'Default':
+        if self.name == 'Default':
             return self.hand.pop(self.hand.index(random.choice(self.hand)))
         else:
             for i in range(len(self.hand)):
@@ -121,12 +130,22 @@ class Player:
         hand_list.sort()
         self.hula = hulemei(hand_list)
 
+    @property
+    def name(self):
+        return self.__name
+
+    @name.setter
+    def name(self, name):
+        self.__name = name
+
 
 if __name__ == '__main__':
     p = Player()
     # for i in range(20):
     #     p.hand = random.choices(hill, k=14)
-    p.hand = ['🀈', '🀈', '🀉', '🀊', '🀋', '🀖', '🀗', '🀘', '🀛', '🀜', '🀝', '🀃', '🀃', '🀃']
+    # p.hand = ['🀈', '🀈', '🀉', '🀊', '🀋', '🀖', '🀗', '🀘', '🀛', '🀜', '🀝', '🀃', '🀃', '🀃']
+    # p.hand = ['🀉', '🀉', '🀑', '🀒', '🀓', '🀔', '🀖', '🀛', '🀜', '🀝', '🀆', '🀆', '🀆', '🀕']
+    p.hand = ['🀈', '🀈', '🀍', '🀍', '🀎', '🀎', '🀏', '🀏', '🀙', '🀚', '🀛', '🀟', '🀟', '🀟']
     p.check()
     print(p.hula)
     print(p.hand)
