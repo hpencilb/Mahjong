@@ -1,6 +1,8 @@
 import random
 import time
+import copy
 from Player import Player, Bot
+from AI import AI
 
 WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"
 TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"
@@ -29,26 +31,19 @@ class Game:
         while not self.has_hu:
             if self.count >= 4:
                 self.count -= 4
-            # TODO 听牌检测没写
             if self.draw(self.__player[self.count]):
                 if self.has_hu:
                     break
-                if self.has_gang:
+                if self.has_gang or self.has_jiagang:
                     self.has_gang = False
-                    continue
-                if self.has_jiagang:
                     self.has_jiagang = False
                     continue
             if self.if_hu_gang_peng_chi(self.count):
                 if self.has_hu:
                     break
-                if self.has_gang:
+                if self.has_gang or self.has_peng or self.has_chi:
                     self.has_gang = False
-                    continue
-                if self.has_peng:
                     self.has_peng = False
-                    continue
-                if self.has_chi:
                     self.has_chi = False
                     continue
             # TODO 结算算番没写
@@ -79,6 +74,7 @@ class Game:
             return True
         item = player.play()
         self.__river.append(item)
+        player.ting(self.get_face_down())
         # 理好牌
         player.sort()
         self.show()
@@ -109,6 +105,7 @@ class Game:
                 # 碰完出一张牌
                 item = self.__player[i].play()
                 self.__river.append(item)
+                self.__player[i].ting(self.get_face_down())
                 self.__player[i].sort()
                 self.show()
                 # count 指向碰的人下家
@@ -125,6 +122,7 @@ class Game:
             # 吃完出一张牌
             item = self.__player[n].play()
             self.__river.append(item)
+            self.__player[n].ting(self.get_face_down())
             self.__player[n].sort()
             self.show()
             # count 指向吃的人下家
@@ -133,12 +131,14 @@ class Game:
         return False
 
     def if_hu(self, player, item=''):
+        # 可能自摸
         if player.hu(item):
             return True
         else:
             return False
 
     def if_gang(self, player, item=''):
+        # 可能自己杠
         if player.gang(item):
             return True
         else:
@@ -161,6 +161,19 @@ class Game:
             return True
         else:
             return False
+
+    def get_face_down(self):
+        hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
+        face_up = copy.deepcopy(self.__river)
+        li = []
+        for i in range(4):
+            li.extend(self.__player[i].side)
+        for i in li:
+            for j in i:
+                face_up.extend(j)
+        for i in face_up:
+            hill.remove(i)
+        return hill
 
     def show(self):
         # TODO 盖牌输出没写
@@ -264,6 +277,8 @@ class Game:
         print('\r\x1b[1B')
         # 输出自己的牌
         print('\x1b[26C', end='')
+        if self.__player[2].ting_flag:
+            print('\x1b[6D⚑\x1b[5C', end='')
         if len(self.__player[2].side) != 0:
             print('\x1b[2D', end='')
             for i in self.__player[2].side:
@@ -303,10 +318,10 @@ class Game:
 
 if __name__ == "__main__":
     gamer_name = input('输入你的名字：')
-    p0 = Bot('Bot 0')
-    p1 = Bot('Bot 1')
+    p0 = AI('Bot 0')
+    p1 = AI('Bot 1')
     p2 = Player(gamer_name)
-    p3 = Bot('Bot 2')
+    p3 = AI('Bot 2')
     game_state = True
     g = Game([p0, p1, p2, p3])
     while game_state:

@@ -10,8 +10,16 @@ DICT = dict(zip(WAN + TIAO + TONG + ELSE, range(34)))
 hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
 
 
-def get_key(dct, v):
-    return list(filter(lambda x: dct[x] == v, dct))
+def ask_input(index, string):
+    while True:
+        content = input(f'{string}')
+        if content.isnumeric():
+            if type(index[0]) == int:
+                content = int(content)
+        if content in index:
+            return content
+        else:
+            print('\x1b[1A\x1b[2K', end='')
 
 
 def has_shunzi(l_s):
@@ -48,7 +56,7 @@ def has_shunzi(l_s):
             return False
     # 如果剩下超过3个 去重先去掉最小的一组
     elif len(temp) > 3:
-        s = list(set(l_s))
+        s = list(set(temp))
         s.sort()
         if s[0] == s[1] - 1 and s[0] == s[2] - 2:
             temp.remove(s[0])
@@ -116,8 +124,10 @@ class Player:
     def __init__(self, name='Player'):
         self.__name = name
         self.hand = []
-        self.hula = False
         self.side = []
+        self.ting_flag = False
+        self.ting_item = ''
+        self.hula = False
 
     def play(self):
         item = self.action_play()
@@ -131,12 +141,22 @@ class Player:
         if hulemei(hand_list):
             if self.action_hu():
                 self.hula = True
-                print(f'Player {self.name} 胡啦! ', end='')
+                print(f'{self.name} 胡啦! ', end='')
                 return True
         if item != '':
             self.hand.remove(item)
             self.sort()
         return False
+
+    def ting(self, h):
+        li = self.check_ting(h)
+        if len(li) > 0:
+            self.ting_flag = True
+            # if self.action_ting():
+            return True
+        else:
+            self.ting_flag = False
+            return False
 
     def gang(self, item):
         if item != '':
@@ -228,23 +248,23 @@ class Player:
                     if len(l_chi) == 1:
                         l_chi = l_chi[0]
                         for i in l_chi:
-                            self.hand.remove(get_key(DICT, i)[0])
+                            self.hand.remove(self.get_key(DICT, i)[0])
                         l_chi.append(it)
                         l_chi.sort()
                         block = ''
                         for i in l_chi:
-                            block += get_key(DICT, i)[0]
+                            block += self.get_key(DICT, i)[0]
                         self.side.append(block)
                     else:
-                        n = self.action_zenmechi(l_chi)
-                        l_chi = l_chi[int(n)]
+                        n = self.action_chiwhich(l_chi)
+                        l_chi = l_chi[n]
                         for i in l_chi:
-                            self.hand.remove(get_key(DICT, i)[0])
+                            self.hand.remove(self.get_key(DICT, i)[0])
                         l_chi.append(it)
                         l_chi.sort()
                         block = ''
                         for i in l_chi:
-                            block += get_key(DICT, i)[0]
+                            block += self.get_key(DICT, i)[0]
                         self.side.append(block)
                     return True
         return False
@@ -265,10 +285,33 @@ class Player:
         else:
             return False
 
+    def check_ting(self, h):
+        li = []
+        for i in set(h):
+            self.hand.append(i)
+            hand_list = [DICT[i] for i in self.hand]
+            hand_list.sort()
+            if hulemei(hand_list):
+                li.append(i)
+            self.hand.remove(i)
+        self.sort()
+        for i in range(len(li) - 1):
+            for j in range(len(li) - i - 1):
+                if DICT[li[j]] > DICT[li[j + 1]]:
+                    tmp = li[j]
+                    li[j] = li[j + 1]
+                    li[j + 1] = tmp
+        return li
+
+    def get_key(self, dct, v):
+        return list(filter(lambda x: dct[x] == v, dct))
+
     def restart(self):
         self.hand = []
-        self.hula = False
         self.side = []
+        self.ting_flag = False
+        self.ting_item = ''
+        self.hula = False
 
     @property
     def name(self):
@@ -285,61 +328,72 @@ class Player:
             if self.hand[i] != '🀄':
                 print(' ', end='')
         print('\r')
-        n = int(input('选择你要出的牌：')) - 1
+        # n = int(input('选择你要出的牌：')) - 1
+        n = ask_input([i for i in range(0, 15)], '选择你要出的牌：') - 1
         return n
 
     def action_hu(self):
-        flag = input('能胡，胡不？(y/n)：')
+        flag = ask_input(['y', 'n'], '能胡，胡不? (y/n):')
         if flag == 'y':
             return True
         else:
             return False
 
+    def action_ting(self):
+        flag = ask_input(['y', 'n'], '能听，听不? (y/n):')
+        if flag == 'y':
+            return True
+        else:
+            return False
+
+    def action_tingwhich(self):
+        pass
+
     def action_chigang(self, item):
-        flag = input('能杠，杠不？(y/n)：')
+        flag = ask_input(['y', 'n'], '能杠，杠不？(y/n):')
         if flag == 'y':
             return True
         else:
             return False
 
     def action_zigang(self, item):
-        flag = input('能杠，杠不？(y/n)：')
+        flag = ask_input(['y', 'n'], '能杠，杠不？(y/n):')
         if flag == 'y':
             return True
         else:
             return False
 
     def action_jiagang(self, i, j):
-        flag = input('能杠，杠不？(y/n)：')
+        flag = ask_input(['y', 'n'], '能杠，杠不？(y/n):')
         if flag == 'y':
             return True
         else:
             return False
 
     def action_peng(self, item):
-        flag = input('能碰，碰不？(y/n)：')
+        flag = ask_input(['y', 'n'], '能碰，碰不？(y/n):')
         if flag == 'y':
             return True
         else:
             return False
 
     def action_chi(self, it, l_chi):
-        flag = input('能吃，吃不？(y/n)：')
+        flag = ask_input(['y', 'n'], '能吃，吃不？(y/n):')
         if flag == 'y':
             return True
         else:
             return False
 
-    def action_zenmechi(self, l_chi):
-        print('多种吃法', end='')
+    def action_chiwhich(self, l_chi):
+        print('多种吃法 ', end='')
         for i in range(len(l_chi)):
             print(f'{i + 1}-', end='')
             for j in l_chi[i]:
-                print(f'{get_key(DICT, j)[0]}', end='')
-                if get_key(DICT, j)[0] != '🀄':
+                print(f'{self.get_key(DICT, j)[0]}', end='')
+                if self.get_key(DICT, j)[0] != '🀄':
                     print(' ', end='')
             print('   ', end='')
-        n = int(input('怎么吃：')) - 1
+        n = ask_input([i + 1 for i in range(len(l_chi))], '怎么吃:') - 1
         return n
 
 
@@ -349,6 +403,7 @@ class Bot(Player):
         self.__think_time = think_time
 
     def think(self):
+        # 假装思考
         time.sleep(random.random() * self.__think_time)
 
     def action_play(self):
@@ -391,7 +446,7 @@ class Bot(Player):
         self.think()
         return True
 
-    def action_zenmechi(self, l_chi):
+    def action_chiwhich(self, l_chi):
         self.think()
         return l_chi.index(random.choice(l_chi))
 
@@ -401,13 +456,14 @@ if __name__ == '__main__':
     # for i in range(20):
     #     p.hand = random.choices(hill, k=14)
     # p.hand = ['🀈', '🀈', '🀉', '🀊', '🀋', '🀖', '🀗', '🀘', '🀛', '🀜', '🀝', '🀃', '🀃', '🀃']
-    # p.hand = ['🀉', '🀉', '🀑', '🀒', '🀓', '🀔', '🀖', '🀛', '🀜', '🀝', '🀆', '🀆', '🀆', '🀕']
-    # p.hand = ['🀈', '🀈', '🀍', '🀍', '🀎', '🀎', '🀏', '🀏', '🀙', '🀚', '🀛', '🀟', '🀟', '🀟']
+    p.hand = ['🀉', '🀉', '🀑', '🀒', '🀓', '🀔', '🀖', '🀛', '🀜', '🀝', '🀆', '🀆', '🀆', '🀕']
+    # p.hand = ['🀈', '🀈', '🀍', '🀍', '🀎', '🀎', '🀏', '🀙', '🀚', '🀛', '🀟', '🀟', '🀟']  # , '🀏']
+    # p.hand = ['🀌', '🀎', '🀒', '🀓', '🀓', '🀔', '🀕', '🀘', '🀘', '🀑']
     # for i in range(10):
-    p.hand = ['🀐', '🀑', '🀒', '🀖', '🀘', '🀞', '🀟', '🀠', '🀀', '🀀', '🀀', '🀆', '🀆', '🀆']
+    # p.hand = ['🀐', '🀑', '🀒', '🀖', '🀘', '🀞', '🀟', '🀠', '🀀', '🀀', '🀀', '🀆', '🀆']  # , '🀆']
     #     p.play()
     #     print(p.hand)
-
-    print(p.check())
-    print(p.hand)
+    # print(p.ting(hill))
+    print(p.hu(''))
+    # print(p.hand)
     # print(hulemei([5, 5, 5,6,6]))
