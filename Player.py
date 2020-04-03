@@ -1,5 +1,6 @@
 import random
 import copy
+import time
 
 WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"  # 0-8
 TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"  # 9-17
@@ -119,13 +120,7 @@ class Player:
         self.side = []
 
     def play(self):
-        print('  ', end='')
-        for i in range(len(self.hand)):
-            print(f'{i}-{self.hand[i]}', end=' ')
-            if self.hand[i] != '🀄':
-                print(' ', end='')
-        print('\r')
-        item = int(input('选择你要出的牌：'))
+        item = self.action_play()
         return self.hand.pop(item)
 
     def hu(self, item):
@@ -134,8 +129,7 @@ class Player:
         hand_list = [DICT[i] for i in self.hand]
         hand_list.sort()
         if hulemei(hand_list):
-            flag = input('能胡，胡不？(y/n)：')
-            if flag == 'y':
+            if self.action_hu():
                 self.hula = True
                 print(f'Player {self.name} 胡啦! ', end='')
                 return True
@@ -145,20 +139,40 @@ class Player:
         return False
 
     def gang(self, item):
-        if self.hand.count(item) == 3:
-            flag = input('能杠，杠不？(y/n)：')
-            if flag == 'y':
-                self.side.append(item * 4)
-                self.hand.remove(item)
-                self.hand.remove(item)
-                self.hand.remove(item)
-                return True
+        if item != '':
+            if self.hand.count(item) == 3:
+                if self.action_chigang(item):
+                    self.side.append(item * 4)
+                    self.hand.remove(item)
+                    self.hand.remove(item)
+                    self.hand.remove(item)
+                    return True
+        else:
+            for i in self.hand:
+                if self.hand.count(i) == 4:
+                    if self.action_zigang(i):
+                        self.side.append(i * 4)
+                        self.hand.remove(i)
+                        self.hand.remove(i)
+                        self.hand.remove(i)
+                        self.hand.remove(i)
+                        return True
+        return False
+
+    def jiagang(self):
+        if len(self.side) != 0:
+            for i in self.hand:
+                for j in range(len(self.side)):
+                    if self.side[j].count(i) == 3:
+                        if self.action_jiagang(i, j):
+                            self.side[j] += i
+                            self.hand.remove(i)
+                            return True
         return False
 
     def peng(self, item):
         if self.hand.count(item) == 2:
-            flag = input('能碰，碰不？(y/n)：')
-            if flag == 'y':
+            if self.action_peng(item):
                 self.side.append(item * 3)
                 self.hand.remove(item)
                 self.hand.remove(item)
@@ -210,8 +224,7 @@ class Player:
                     l_chi.append([it + 1, it + 2])
                     can_chi = True
             if can_chi:
-                flag = input('能吃，吃不？(y/n)：')
-                if flag == 'y':
+                if self.action_chi(it, l_chi):
                     if len(l_chi) == 1:
                         l_chi = l_chi[0]
                         for i in l_chi:
@@ -223,15 +236,7 @@ class Player:
                             block += get_key(DICT, i)[0]
                         self.side.append(block)
                     else:
-                        print('多种吃法', end='')
-                        for i in range(len(l_chi)):
-                            print(f'{i}-', end='')
-                            for j in l_chi[i]:
-                                print(f'{get_key(DICT, j)[0]}', end='')
-                                if get_key(DICT, j)[0] != '🀄':
-                                    print(' ', end='')
-                            print('   ', end='')
-                        n = input('怎么吃：')
+                        n = self.action_zenmechi(l_chi)
                         l_chi = l_chi[int(n)]
                         for i in l_chi:
                             self.hand.remove(get_key(DICT, i)[0])
@@ -273,101 +278,122 @@ class Player:
     def name(self, name):
         self.__name = name
 
+    def action_play(self):
+        print('  ', end='')
+        for i in range(len(self.hand)):
+            print(f'{i + 1}-{self.hand[i]}', end=' ')
+            if self.hand[i] != '🀄':
+                print(' ', end='')
+        print('\r')
+        n = int(input('选择你要出的牌：')) - 1
+        return n
+
+    def action_hu(self):
+        flag = input('能胡，胡不？(y/n)：')
+        if flag == 'y':
+            return True
+        else:
+            return False
+
+    def action_chigang(self, item):
+        flag = input('能杠，杠不？(y/n)：')
+        if flag == 'y':
+            return True
+        else:
+            return False
+
+    def action_zigang(self, item):
+        flag = input('能杠，杠不？(y/n)：')
+        if flag == 'y':
+            return True
+        else:
+            return False
+
+    def action_jiagang(self, i, j):
+        flag = input('能杠，杠不？(y/n)：')
+        if flag == 'y':
+            return True
+        else:
+            return False
+
+    def action_peng(self, item):
+        flag = input('能碰，碰不？(y/n)：')
+        if flag == 'y':
+            return True
+        else:
+            return False
+
+    def action_chi(self, it, l_chi):
+        flag = input('能吃，吃不？(y/n)：')
+        if flag == 'y':
+            return True
+        else:
+            return False
+
+    def action_zenmechi(self, l_chi):
+        print('多种吃法', end='')
+        for i in range(len(l_chi)):
+            print(f'{i + 1}-', end='')
+            for j in l_chi[i]:
+                print(f'{get_key(DICT, j)[0]}', end='')
+                if get_key(DICT, j)[0] != '🀄':
+                    print(' ', end='')
+            print('   ', end='')
+        n = int(input('怎么吃：')) - 1
+        return n
+
 
 class Bot(Player):
-    def __init__(self, name='Bot'):
+    def __init__(self, name='Bot', think_time=1):
         super().__init__(name)
+        self.__think_time = think_time
 
-    # TODO AI 没写
-    def play(self):
-        return self.hand.pop(self.hand.index(random.choice(self.hand)))
+    def think(self):
+        time.sleep(random.random() * self.__think_time)
 
-    def hu(self, item):
-        if item != '':
-            self.hand.append(item)
-        hand_list = [DICT[i] for i in self.hand]
-        hand_list.sort()
-        if hulemei(hand_list):
-            self.hula = True
-            print(f'Player {self.name} 胡啦! ', end='')
-            return True
-        else:
-            if item != '':
-                self.hand.remove(item)
-                self.sort()
-            return False
+    def action_play(self):
+        self.think()
+        return self.hand.index(random.choice(self.hand))
 
-    def gang(self, item):
-        if self.hand.count(item) == 3:
-            self.side.append(item * 4)
-            self.hand.remove(item)
-            self.hand.remove(item)
-            self.hand.remove(item)
-            return True
-        else:
-            return False
+    def action_hu(self):
+        self.think()
+        return True
 
-    def peng(self, item):
-        if self.hand.count(item) == 2:
-            self.side.append(item * 3)
-            self.hand.remove(item)
-            self.hand.remove(item)
-            return True
-        else:
-            return False
+    def action_chigang(self, item):
+        self.think()
+        return True
 
-    def chi(self, item):
-        l_chi = []
-        can_chi = False
-        it = DICT[item]
-        hand_list = [DICT[i] for i in self.hand]
-        if it >= 27:
-            return False
-        else:
-            if it == 0 or it == 9 or it == 18:
-                if it + 1 in hand_list and it + 2 in hand_list:
-                    l_chi.append([it + 1, it + 2])
-                    can_chi = True
-            elif it == 8 or it == 17 or it == 26:
-                if it - 1 in hand_list and it - 2 in hand_list:
-                    l_chi.append([it - 2, it - 1])
-                    can_chi = True
-            elif it == 1 or it == 10 or it == 19:
-                if it + 1 in hand_list and it + 2 in hand_list:
-                    l_chi.append([it + 1, it + 2])
-                    can_chi = True
-                if it - 1 in hand_list and it + 1 in hand_list:
-                    l_chi.append([it - 1, it + 1])
-                    can_chi = True
-            elif it == 7 or it == 16 or it == 25:
-                if it - 1 in hand_list and it - 2 in hand_list:
-                    l_chi.append([it - 1, it - 2])
-                    can_chi = True
-                if it - 1 in hand_list and it + 1 in hand_list:
-                    l_chi.append([it - 1, it + 1])
-                    can_chi = True
-            else:
-                if it - 1 in hand_list and it - 2 in hand_list:
-                    l_chi.append([it - 2, it - 1])
-                    can_chi = True
-                if it - 1 in hand_list and it + 1 in hand_list:
-                    l_chi.append([it - 1, it + 1])
-                    can_chi = True
-                if it + 1 in hand_list and it + 2 in hand_list:
-                    l_chi.append([it + 1, it + 2])
-                    can_chi = True
-            if can_chi:
-                l_chi = l_chi[0]
-                for i in l_chi:
-                    self.hand.remove(get_key(DICT, i)[0])
-                l_chi.append(it)
-                l_chi.sort()
-                block = ''
-                for i in l_chi:
-                    block += get_key(DICT, i)[0]
-                self.side.append(block)
-                return True
-        return False
+    def action_zigang(self, item):
+        self.think()
+        return True
+
+    def action_jiagang(self, i, j):
+        """
+
+        :param i: 能加杠的牌在hand的位置
+        :param j: 碰的牌堆在side的位置
+        :return:
+        """
+        self.think()
+        return True
+
+    def action_peng(self, item):
+        self.think()
+        return True
+
+    def action_chi(self, it, l_chi):
+        """
+
+        :param it: 能吃的牌的DICT字典编号
+        :param l_chi: 能吃的牌的字典编号组成的list
+        :return:
+        """
+        self.think()
+        return True
+
+    def action_zenmechi(self, l_chi):
+        self.think()
+        return l_chi.index(random.choice(l_chi))
 
 
 if __name__ == '__main__':

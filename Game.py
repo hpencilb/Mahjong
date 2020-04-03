@@ -17,24 +17,30 @@ class Game:
         self.__river = []
         self.has_hu = False
         self.has_gang = False
+        self.has_jiagang = False
         self.has_peng = False
         self.has_chi = False
         self.count = 0
 
     def game(self):
         self.start()
-        self.has_hu = True
         # 循环摸牌出牌
         self.count = 0
-        while self.has_hu:
+        while not self.has_hu:
             if self.count >= 4:
                 self.count -= 4
             # TODO 听牌检测没写
             if self.draw(self.__player[self.count]):
-                # 自摸
-                break
+                if self.has_hu:
+                    break
+                if self.has_gang:
+                    self.has_gang = False
+                    continue
+                if self.has_jiagang:
+                    self.has_jiagang = False
+                    continue
             if self.if_hu_gang_peng_chi(self.count):
-                if not self.has_hu:
+                if self.has_hu:
                     break
                 if self.has_gang:
                     self.has_gang = False
@@ -52,14 +58,94 @@ class Game:
                 self.has_hu = False
                 print('========= Game Over =========')
 
+    def draw(self, player):
+        # 先摸到牌
+        player.hand.append(self.__hill.pop(self.__hill.index(random.choice(self.__hill))))
+        self.show()
+        # 看一下胡没胡
+        if self.if_hu(player):
+            print('自摸！')
+            self.has_hu = True
+            return True
+        if self.if_gang(player):
+            self.has_gang = True
+            self.show()
+            # count不变 杠的人再进入到摸牌环节
+            return True
+        if self.if_jiagang(player):
+            self.has_jiagang = True
+            self.show()
+            # count不变 杠的人再进入到摸牌环节
+            return True
+        item = player.play()
+        self.__river.append(item)
+        # 理好牌
+        player.sort()
+        self.show()
+        return False
+
+    def if_hu_gang_peng_chi(self, n):
+        li = [0, 1, 2, 3]
+        li.remove(n)
+        for i in li:
+            if self.if_hu(self.__player[i], self.__river[-1]):
+                print(f'{self.__player[n].name} 放炮。')
+                self.has_hu = True
+                return True
+        for i in li:
+            if self.if_gang(self.__player[i], self.__river[-1]):
+                self.__river.pop(-1)
+                self.show()
+                self.has_gang = True
+                # 杠完直接摸一张出一张 相当于跳到了杠的人的摸牌环节
+                # count 指向杠的人
+                self.count = i
+                return True
+        for i in li:
+            if self.if_peng(self.__player[i], self.__river[-1]):
+                self.__river.pop(-1)
+                self.show()
+                self.has_peng = True
+                # 碰完出一张牌
+                item = self.__player[i].play()
+                self.__river.append(item)
+                self.__player[i].sort()
+                self.show()
+                # count 指向碰的人下家
+                self.count = i + 1
+                return True
+        if n + 1 >= 4:
+            n = 0
+        else:
+            n = n + 1
+        if self.if_chi(self.__player[n], self.__river[-1]):
+            self.__river.pop(-1)
+            self.show()
+            self.has_chi = True
+            # 吃完出一张牌
+            item = self.__player[n].play()
+            self.__river.append(item)
+            self.__player[n].sort()
+            self.show()
+            # count 指向吃的人下家
+            self.count = n + 1
+            return True
+        return False
+
     def if_hu(self, player, item=''):
         if player.hu(item):
             return True
         else:
             return False
 
-    def if_gang(self, player, item):
+    def if_gang(self, player, item=''):
         if player.gang(item):
+            return True
+        else:
+            return False
+
+    def if_jiagang(self, player):
+        if player.jiagang():
             return True
         else:
             return False
@@ -75,64 +161,6 @@ class Game:
             return True
         else:
             return False
-
-    def if_hu_gang_peng_chi(self, n):
-        li = [0, 1, 2, 3]
-        li.remove(n)
-        for i in li:
-            if self.if_hu(self.__player[i], self.__river[-1]):
-                print(f'{self.__player[n].name} 放炮。')
-                self.has_hu = False
-                return True
-        for i in li:
-            if self.if_gang(self.__player[i], self.__river[-1]):
-                self.__river.pop(-1)
-                self.has_gang = True
-                self.count = i
-                return True
-        for i in li:
-            if self.if_peng(self.__player[i], self.__river[-1]):
-                self.__river.pop(-1)
-                self.show()
-                self.has_peng = True
-                item = self.__player[i].play()
-                self.__river.append(item)
-                self.__player[i].sort()
-                self.show()
-                self.count = i + 1
-                return True
-        if n + 1 >= 4:
-            n = 0
-        else:
-            n = n + 1
-        if self.if_chi(self.__player[n], self.__river[-1]):
-            self.__river.pop(-1)
-            self.show()
-            self.has_chi = True
-            item = self.__player[n].play()
-            self.__river.append(item)
-            self.__player[n].sort()
-            self.show()
-            self.count = n + 1
-            return True
-        return False
-
-    def draw(self, player):
-        # 先摸到牌
-        player.hand.append(self.__hill.pop(self.__hill.index(random.choice(self.__hill))))
-        self.show()
-        # 看一下胡没胡
-        if self.if_hu(player):
-            print('自摸！')
-            self.has_hu = False
-            return True
-        # TODO 主动杠加杠没写
-        item = player.play()
-        self.__river.append(item)
-        # 理好牌
-        player.sort()
-        self.show()
-        return False
 
     def show(self):
         # TODO 盖牌输出没写
@@ -268,6 +296,7 @@ class Game:
     def reset(self):
         self.__hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
         self.__river = []
+        self.has_hu = False
         for i in self.__player:
             i.restart()
 
