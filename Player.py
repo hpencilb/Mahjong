@@ -22,112 +22,18 @@ def ask_input(index, string):
             print('\x1b[1A\x1b[2K', end='')
 
 
-def has_shunzi(l_s):
-    temp = copy.deepcopy(l_s)
-    L = len(l_s)
-    # 如果进来的时候只有3个 直接判断
-    if L == 3:
-        if (temp[0] == temp[1] and temp[0] == temp[2]) or (temp[0] == temp[1] - 1 and temp[0] == temp[2] - 2):
-            return True
-        else:
-            return False
-    # 其他情况先去掉所有刻子
-    count = 0
-    while count < L - 2:
-        i = count
-        if l_s[i] == l_s[i + 1] and l_s[i] == l_s[i + 2]:
-            temp.remove(l_s[i])
-            temp.remove(l_s[i])
-            temp.remove(l_s[i])
-            count += 3
-        else:
-            count += 1
-    # 如果只有刻子 满足
-    if len(temp) == 0:
-        return True
-    # 如果字牌有不是刻子的 不满足
-    elif temp[0] >= 27:
-        return False
-    # 如果正好剩下3个是顺子
-    elif len(temp) == 3:
-        if temp[0] == temp[1] - 1 and temp[0] == temp[2] - 2:
-            return True
-        else:
-            return False
-    # 如果剩下超过3个 去重先去掉最小的一组
-    elif len(temp) > 3:
-        s = list(set(temp))
-        s.sort()
-        if s[0] == s[1] - 1 and s[0] == s[2] - 2:
-            temp.remove(s[0])
-            temp.remove(s[1])
-            temp.remove(s[2])
-            # 递归
-            if has_shunzi(temp):
-                return True
-    return False
-
-
-def has_quetou(l_q):
-    temp = copy.deepcopy(l_q)
-    for i in range(len(l_q) - 1):
-        if l_q[i] == l_q[i + 1]:
-            temp.remove(l_q[i])
-            temp.remove(l_q[i])
-            if len(temp) == 0:
-                return True
-            elif has_shunzi(temp):
-                return True
-            else:
-                temp = copy.deepcopy(l_q)
-    return False
-
-
-def hulemei(hand_list):
-    # TODO 特殊牌型胡牌没写
-    l_W = []
-    l_S = []
-    l_P = []
-    l_Z = []
-    for i in hand_list:
-        if 0 <= i <= 8:
-            l_W.append(i)
-        elif 9 <= i <= 17:
-            l_S.append(i)
-        elif 18 <= i <= 26:
-            l_P.append(i)
-        else:
-            l_Z.append(i)
-    L = [l_W, l_S, l_P, l_Z]
-    # print(L)
-    l_que_tou = []
-    for i in L:
-        le = len(i)
-        if le == 1 or le == 4 or le == 7 or le == 10 or le == 13:
-            return False
-        elif le == 2 or le == 5 or le == 8 or le == 11 or le == 14:
-            l_que_tou.append(i)
-        else:
-            if le > 0:
-                if not has_shunzi(i):
-                    return False
-            else:
-                continue
-    if len(l_que_tou) != 1:
-        return False
-    if not has_quetou(l_que_tou[0]):
-        return False
-    return True
-
-
 class Player:
-    def __init__(self, name='Player'):
-        self.__name = name
+    def __init__(self, NAME='Player'):
+        if NAME == '':
+            NAME = 'Player'
+        self.__name = NAME
         self.hand = []
         self.side = []
         self.ting_flag = False
         self.ting_item = ''
+        self.fangpao = False
         self.hula = False
+        self.face_down = []
 
     def play(self):
         item = self.action_play()
@@ -138,18 +44,17 @@ class Player:
             self.hand.append(item)
         hand_list = [DICT[i] for i in self.hand]
         hand_list.sort()
-        if hulemei(hand_list):
+        if self.hulemei(hand_list):
             if self.action_hu():
                 self.hula = True
-                print(f'{self.name} 胡啦! ', end='')
                 return True
         if item != '':
             self.hand.remove(item)
             self.sort()
         return False
 
-    def ting(self, h):
-        li = self.check_ting(h)
+    def ting(self):
+        li = self.check_ting(self.face_down)
         if len(li) > 0:
             self.ting_flag = True
             # if self.action_ting():
@@ -280,7 +185,7 @@ class Player:
     def check(self):
         hand_list = [DICT[i] for i in self.hand]
         hand_list.sort()
-        if hulemei(hand_list):
+        if self.hulemei(hand_list):
             return True
         else:
             return False
@@ -291,7 +196,7 @@ class Player:
             self.hand.append(i)
             hand_list = [DICT[i] for i in self.hand]
             hand_list.sort()
-            if hulemei(hand_list):
+            if self.hulemei(hand_list):
                 li.append(i)
             self.hand.remove(i)
         self.sort()
@@ -306,11 +211,114 @@ class Player:
     def get_key(self, dct, v):
         return list(filter(lambda x: dct[x] == v, dct))
 
+    def has_quetou(self, l_q):
+        temp = copy.deepcopy(l_q)
+        for i in range(len(l_q) - 1):
+            if l_q[i] == l_q[i + 1]:
+                temp.remove(l_q[i])
+                temp.remove(l_q[i])
+                if len(temp) == 0:
+                    return True
+                elif self.has_shunzi(temp):
+                    return True
+                else:
+                    temp = copy.deepcopy(l_q)
+        return False
+
+    def has_shunzi(self, l_s):
+        if len(l_s) % 3 != 0:
+            return False
+        temp = copy.deepcopy(l_s)
+        L = len(l_s)
+        # 如果进来的时候只有3个 直接判断
+        if L == 3:
+            if (temp[0] == temp[1] and temp[0] == temp[2]) or (temp[0] == temp[1] - 1 and temp[0] == temp[2] - 2):
+                return True
+            else:
+                return False
+        # 其他情况先去掉所有刻子
+        count = 0
+        while count < L - 2:
+            i = count
+            if l_s[i] == l_s[i + 1] and l_s[i] == l_s[i + 2]:
+                temp.remove(l_s[i])
+                temp.remove(l_s[i])
+                temp.remove(l_s[i])
+                count += 3
+            else:
+                count += 1
+        # 如果只有刻子 满足
+        if len(temp) == 0:
+            return True
+        # 如果字牌有不是刻子的 不满足
+        elif temp[0] >= 27:
+            return False
+        # 如果正好剩下3个是顺子
+        elif len(temp) == 3:
+            if temp[0] == temp[1] - 1 and temp[0] == temp[2] - 2:
+                return True
+            else:
+                return False
+        # 如果剩下超过3个 去重先去掉最小的一组
+        elif len(temp) > 3:
+            s = list(set(temp))
+            s.sort()
+            if s[0] == s[1] - 1 and s[0] == s[2] - 2:
+                temp.remove(s[0])
+                temp.remove(s[1])
+                temp.remove(s[2])
+                # 递归
+                if self.has_shunzi(temp):
+                    return True
+        return False
+
+    def hulemei(self, hand_list):
+        # TODO 特殊牌型胡牌没写
+        l_W = []
+        l_S = []
+        l_P = []
+        l_Z = []
+        for i in hand_list:
+            if 0 <= i <= 8:
+                l_W.append(i)
+            elif 9 <= i <= 17:
+                l_S.append(i)
+            elif 18 <= i <= 26:
+                l_P.append(i)
+            else:
+                l_Z.append(i)
+        L = [l_W, l_S, l_P, l_Z]
+        # print(L)
+        l_que_tou = []
+        for i in L:
+            le = len(i)
+            if le == 1 or le == 4 or le == 7 or le == 10 or le == 13:
+                return False
+            elif le == 2 or le == 5 or le == 8 or le == 11 or le == 14:
+                l_que_tou.append(i)
+            else:
+                if le > 0:
+                    if not self.has_shunzi(i):
+                        return False
+                else:
+                    continue
+        if len(l_que_tou) != 1:
+            return False
+        if not self.has_quetou(l_que_tou[0]):
+            return False
+        return True
+
+    def get_face_down(self, face_down):
+        self.face_down = face_down
+        for i in self.hand:
+            self.face_down.remove(i)
+
     def restart(self):
         self.hand = []
         self.side = []
         self.ting_flag = False
         self.ting_item = ''
+        self.fangpao = False
         self.hula = False
 
     @property
@@ -322,12 +330,12 @@ class Player:
         self.__name = name
 
     def action_play(self):
-        print('  ', end='')
+        print('\x1b[3C', end='')
         for i in range(len(self.hand)):
-            print(f'{i + 1}-{self.hand[i]}', end=' ')
+            print(f'{i + 1}{self.hand[i]}', end='  ')
             if self.hand[i] != '🀄':
                 print(' ', end='')
-        print('\r')
+        print('')
         # n = int(input('选择你要出的牌：')) - 1
         n = ask_input([i for i in range(0, 15)], '选择你要出的牌：') - 1
         return n
@@ -398,8 +406,8 @@ class Player:
 
 
 class Bot(Player):
-    def __init__(self, name='Bot', think_time=1):
-        super().__init__(name)
+    def __init__(self, NAME='Bot', think_time=1):
+        super().__init__(NAME=NAME)
         self.__think_time = think_time
 
     def think(self):

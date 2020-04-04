@@ -13,32 +13,33 @@ BACK = "🀫"
 
 
 class Game:
-    def __init__(self, player_list):
-        self.__hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
+    def __init__(self, player_list, HIDE=True):
         self.__player = player_list
+        self.__hide = HIDE
+        self.__info = ''
+        self.__hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
         self.__river = []
+        self.__count = 0
         self.has_hu = False
         self.has_gang = False
         self.has_jiagang = False
         self.has_peng = False
         self.has_chi = False
-        self.count = 0
 
     def game(self):
         self.start()
         # 循环摸牌出牌
-        self.count = 0
         while not self.has_hu:
-            if self.count >= 4:
-                self.count -= 4
-            if self.draw(self.__player[self.count]):
+            if self.__count >= 4:
+                self.__count -= 4
+            if self.draw(self.__player[self.__count]):
                 if self.has_hu:
                     break
                 if self.has_gang or self.has_jiagang:
                     self.has_gang = False
                     self.has_jiagang = False
                     continue
-            if self.if_hu_gang_peng_chi(self.count):
+            if self.if_hu_gang_peng_chi(self.__count):
                 if self.has_hu:
                     break
                 if self.has_gang or self.has_peng or self.has_chi:
@@ -47,11 +48,15 @@ class Game:
                     self.has_chi = False
                     continue
             # TODO 结算算番没写
-            self.count += 1
+            self.__count += 1
             # 没牌可摸时结束
             if len(self.__hill) == 0:
-                self.has_hu = False
-                print('========= Game Over =========')
+                self.has_hu = True
+                self.__info = '游戏结束，和局。'
+        if self.has_hu:
+            self.__hide = False
+            self.show()
+            print(self.__info)
 
     def draw(self, player):
         # 先摸到牌
@@ -59,7 +64,7 @@ class Game:
         self.show()
         # 看一下胡没胡
         if self.if_hu(player):
-            print('自摸！')
+            self.__info += '自摸！'
             self.has_hu = True
             return True
         if self.if_gang(player):
@@ -74,7 +79,7 @@ class Game:
             return True
         item = player.play()
         self.__river.append(item)
-        player.ting(self.get_face_down())
+        player.ting()
         # 理好牌
         player.sort()
         self.show()
@@ -85,8 +90,11 @@ class Game:
         li.remove(n)
         for i in li:
             if self.if_hu(self.__player[i], self.__river[-1]):
-                print(f'{self.__player[n].name} 放炮。')
+                self.__river.pop(-1)
+                self.__info += f'{self.__player[n].name} 放炮。'
+                self.__player[n].fangpao = True
                 self.has_hu = True
+                self.__count = i
                 return True
         for i in li:
             if self.if_gang(self.__player[i], self.__river[-1]):
@@ -95,7 +103,7 @@ class Game:
                 self.has_gang = True
                 # 杠完直接摸一张出一张 相当于跳到了杠的人的摸牌环节
                 # count 指向杠的人
-                self.count = i
+                self.__count = i
                 return True
         for i in li:
             if self.if_peng(self.__player[i], self.__river[-1]):
@@ -105,11 +113,13 @@ class Game:
                 # 碰完出一张牌
                 item = self.__player[i].play()
                 self.__river.append(item)
-                self.__player[i].ting(self.get_face_down())
+                # count 指向碰的人下家
+                self.__count = i + 1
+                self.__player[i].ting()
                 self.__player[i].sort()
                 self.show()
-                # count 指向碰的人下家
-                self.count = i + 1
+                # 再检测打出来的牌有没有胡杠碰吃
+                self.if_hu_gang_peng_chi(i)
                 return True
         if n + 1 >= 4:
             n = 0
@@ -122,22 +132,27 @@ class Game:
             # 吃完出一张牌
             item = self.__player[n].play()
             self.__river.append(item)
-            self.__player[n].ting(self.get_face_down())
+            # count 指向吃的人下家
+            self.__count = n + 1
+            self.__player[n].ting()
             self.__player[n].sort()
             self.show()
-            # count 指向吃的人下家
-            self.count = n + 1
+            # 再检测打出来的牌有没有胡杠碰吃
+            self.if_hu_gang_peng_chi(n)
             return True
         return False
 
     def if_hu(self, player, item=''):
+        player.get_face_down(self.get_face_down())
         # 可能自摸
         if player.hu(item):
+            self.__info += f'{player.name} 胡啦! '
             return True
         else:
             return False
 
     def if_gang(self, player, item=''):
+        player.get_face_down(self.get_face_down())
         # 可能自己杠
         if player.gang(item):
             return True
@@ -145,18 +160,21 @@ class Game:
             return False
 
     def if_jiagang(self, player):
+        player.get_face_down(self.get_face_down())
         if player.jiagang():
             return True
         else:
             return False
 
     def if_peng(self, player, item):
+        player.get_face_down(self.get_face_down())
         if player.peng(item):
             return True
         else:
             return False
 
     def if_chi(self, player, item):
+        player.get_face_down(self.get_face_down())
         if player.chi(item):
             return True
         else:
@@ -176,11 +194,16 @@ class Game:
         return hill
 
     def show(self):
-        # TODO 盖牌输出没写
         # 清屏
         print('\x1b[2J\x1b[0;0H')
         # 输出0号玩家的牌
-        print('\x1b[26C', end='')
+        print('\x1b[20C', end='')
+        if self.has_hu and self.__count == 0:
+            print('♕\x1b[5C', end='')
+        elif self.__player[0].fangpao:
+            print('💔\x1b[4C', end='')
+        else:
+            print('\x1b[6C', end='')
         if len(self.__player[0].side) != 0:
             print('\x1b[2D', end='')
             for i in self.__player[0].side:
@@ -191,14 +214,21 @@ class Game:
                 print(' ', end='')
             print('\x1b[4C', end='')
         for i in self.__player[0].hand:
-            print(i, end='')
-            if i != '🀄':
-                print(' ', end='')
-
+            if self.__hide:
+                print(BACK, end=' ')
+            else:
+                print(i, end='')
+                if i != '🀄':
+                    print(' ', end='')
         # 空行
-        print('\r\x1b[2B')
+        print('\r')
+        if self.has_hu and self.__count == 1:
+            print('♕\x1b[1B')
+        elif self.__player[1].fangpao:
+            print('💔\x1b[1B')
+        else:
+            print('\x1b[1B')
 
-        # 交替输出1、3号玩家的牌
         def show_line(head, middle, tail):
             if len(head) == 1:
                 print(head, end='')
@@ -229,6 +259,7 @@ class Game:
                         print(' ', end='')
                 print('\r')
 
+        # 交替输出1、3号玩家的牌
         for i in range(14):
             l1 = len(self.__player[1].hand)
             s1 = len(self.__player[1].side)
@@ -241,14 +272,17 @@ class Game:
                             h = self.__player[1].side[j]
                 elif s1 <= i < s1 + 2 or l1 + s1 + 2 <= i:
                     h = ' '
+                elif self.__hide:
+                    h = BACK
                 else:
                     h = self.__player[1].hand[i - 2 - s1]
             else:
                 if l1 <= i:
                     h = ' '
+                elif self.__hide:
+                    h = BACK
                 else:
                     h = self.__player[1].hand[i]
-
             if i >= 5:
                 if len(self.__river) > 21:
                     m = self.__river[(i - 5) * 21:(i - 5) * 21 + 21]
@@ -256,7 +290,6 @@ class Game:
                     m = self.__river[(i - 5) * 21:]
             else:
                 m = ''
-
             if s2 > 0:
                 if i > 13 - s2:
                     for j in range(s2):
@@ -264,21 +297,36 @@ class Game:
                             t = self.__player[3].side[j]
                 elif 13 - s2 >= i > 11 - s2 or 11 - l2 - s2 >= i:
                     t = ' '
+                elif self.__hide:
+                    t = BACK
                 else:
                     t = self.__player[3].hand[11 - i - s2]
             else:
                 if l2 <= 13 - i:
                     t = ' '
+                elif self.__hide:
+                    t = BACK
                 else:
                     t = self.__player[3].hand[13 - i]
-
             show_line(h, m, t)
+
         # 空行
-        print('\r\x1b[1B')
+        if self.has_hu and self.__count == 3:
+            print('\x1b[1B\x1b[78C♕')
+        elif self.__player[3].fangpao:
+            print('\x1b[1B\x1b[78C💔')
+        else:
+            print('\x1b[1B')
         # 输出自己的牌
-        print('\x1b[26C', end='')
-        if self.__player[2].ting_flag:
-            print('\x1b[6D⚑\x1b[5C', end='')
+        print('\x1b[20C', end='')
+        if self.has_hu and self.__count == 2:
+            print('♕\x1b[5C', end='')
+        elif self.__player[2].fangpao:
+            print('💔\x1b[4C', end='')
+        elif self.__player[2].ting_flag:
+            print('⚑\x1b[5C', end='')
+        else:
+            print('\x1b[6C', end='')
         if len(self.__player[2].side) != 0:
             print('\x1b[2D', end='')
             for i in self.__player[2].side:
@@ -294,6 +342,7 @@ class Game:
                 print(' ', end='')
         print('\r')
         time.sleep(0.5)
+        # time.sleep(0.1)
 
     def start(self):
         # 发13张牌
@@ -308,9 +357,12 @@ class Game:
             self.__player[i].sort()
         self.show()
 
-    def reset(self):
+    def reset(self, HIDE=True):
         self.__hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
         self.__river = []
+        self.__info = ''
+        self.__hide = HIDE
+        self.__count = 0
         self.has_hu = False
         for i in self.__player:
             i.restart()
@@ -318,15 +370,14 @@ class Game:
 
 if __name__ == "__main__":
     gamer_name = input('输入你的名字：')
-    p0 = AI('Bot 0')
-    p1 = AI('Bot 1')
-    p2 = Player(gamer_name)
-    p3 = AI('Bot 2')
+    P = Player(gamer_name)
+    # P = AI(gamer_name)
     game_state = True
-    g = Game([p0, p1, p2, p3])
+    hide = True
+    g = Game([AI('Bot 0'), AI('Bot 1'), P, AI('Bot 2')], HIDE=hide)
     while game_state:
         g.game()
         flag = input('输入0结束，输入其他继续。')
         if flag == '0':
             game_state = False
-        g.reset()
+        g.reset(HIDE=hide)

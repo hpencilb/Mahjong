@@ -1,5 +1,6 @@
 from Player import Bot
 import random
+import copy
 
 WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"  # 0-8
 TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"  # 9-17
@@ -10,11 +11,28 @@ hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
 
 
 class AI(Bot):
-    def __init__(self, name='AI'):
-        super().__init__(name=name)
+    def __init__(self, NAME='AI'):
+        super().__init__(NAME=NAME)
+        self.last_ting_count = 0
+        self.chi_num = 0
 
     # TODO AI 强化
     def action_play(self):
+        hand = copy.deepcopy(self.hand)
+        m = 0
+        choose = random.choice(self.hand)
+        for i in set(hand):
+            hand.remove(i)
+            l_t = self.get_ting_list(hand, self.face_down)
+            c = self.count_ting(l_t, self.face_down)
+            if c > m:
+                m = c
+                choose = i
+            hand.append(i)
+        if m > self.last_ting_count:
+            self.last_ting_count = m
+        if self.ting_flag:
+            return self.hand.index(choose)
         hand_list = [DICT[i] for i in self.hand]
         hand_list.sort()
         l_W = []
@@ -39,7 +57,9 @@ class AI(Bot):
                         s.remove(i)
 
         def r_shunzi(s):
-            for i in set(s):
+            temp = list(set(s))
+            temp.sort()
+            for i in temp:
                 if i in s and i - 1 in s and i + 1 in s:
                     s.remove(i)
                     s.remove(i - 1)
@@ -54,7 +74,9 @@ class AI(Bot):
                     s.remove(i + 2)
 
         def r_shunzi_possible(s):
-            for i in set(s):
+            temp = list(set(s))
+            temp.sort()
+            for i in temp:
                 if i in s and i - 2 in s:
                     s.remove(i)
                     s.remove(i - 2)
@@ -72,8 +94,10 @@ class AI(Bot):
         r_dup(l_Z, 3)
         r_dup(l_Z, 2)
         if len(l_Z) > 0:
-            choose = random.choice(l_Z)
-            return self.hand.index(self.get_key(DICT, choose)[0])
+            k = random.random()
+            if k >= 0.1:
+                choose = random.choice(l_Z)
+                return self.hand.index(self.get_key(DICT, choose)[0])
         # 去顺子
         choose_list1 = []
         r_shunzi(l_W)
@@ -146,7 +170,60 @@ class AI(Bot):
         :param l_chi: 能吃的牌的字典编号组成的list
         :return:
         """
+        self.chi_num = 0
+        chi = copy.deepcopy(l_chi)
+        hand_list = [DICT[i] for i in self.hand]
+        if it <= 8:
+            n = 0
+        elif it <= 17:
+            n = 1
+        else:
+            n = 2
+        l_W = []
+        l_S = []
+        l_P = []
+        for i in hand_list:
+            if 0 <= i <= 8:
+                l_W.append(i)
+            elif 9 <= i <= 17:
+                l_S.append(i)
+            elif 18 <= i <= 26:
+                l_P.append(i)
+        L = [l_W, l_S, l_P][n]
+        for i in chi:
+            if i[0] == i[1] - 1:
+                if i[0] - 1 in L or i[1] + 1 in L:
+                    return False
+            if i[0] == i[1] - 2:
+                if i[0] - 1 in L or i[1] + 1 in L:
+                    self.chi_num = 0
+                else:
+                    self.chi_num = chi.index(i)
+                return True
         return True
 
     def action_chiwhich(self, l_chi):
         return l_chi.index(random.choice(l_chi))
+
+    def count_ting(self, l, h):
+        count = 0
+        for i in l:
+            count += h.count(i)
+        return count
+
+    def get_ting_list(self, hand, hill):
+        li = []
+        for i in set(hill):
+            hand.append(i)
+            hand_list = [DICT[i] for i in hand]
+            hand_list.sort()
+            if self.hulemei(hand_list):
+                li.append(i)
+            hand.remove(i)
+        for i in range(len(li) - 1):
+            for j in range(len(li) - i - 1):
+                if DICT[li[j]] > DICT[li[j + 1]]:
+                    tmp = li[j]
+                    li[j] = li[j + 1]
+                    li[j + 1] = tmp
+        return li
