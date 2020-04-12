@@ -1,14 +1,6 @@
-import random
-import time
-import copy
-from Player import Player, Bot
+from Player import *
 from AI import AI
 
-WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"
-TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"
-TONG = "🀙🀚🀛🀜🀝🀞🀟🀠🀡"
-ELSE = "🀀🀁🀂🀃🀄🀅🀆"
-DICT = dict(zip(WAN + TIAO + TONG + ELSE, range(34)))
 BACK = "🀫"
 
 
@@ -17,8 +9,9 @@ class Game:
         self.__player = player_list
         self.__hide = HIDE
         self.__info = ''
-        self.__hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
-        self.__river = []
+        self.__hill = Hill()
+        self.__river = PaiList()
+        self.__public = PaiList()
         self.__count = 0
         self.has_hu = False
         self.has_gang = False
@@ -59,8 +52,8 @@ class Game:
             print(self.__info)
 
     def draw(self, player):
-        # 先摸到牌
-        player.hand.append(self.__hill.pop(self.__hill.index(random.choice(self.__hill))))
+        # 先摸牌
+        player.hand.append(self.__hill.draw())
         self.show()
         # 看一下胡没胡
         if self.if_hu(player):
@@ -79,7 +72,7 @@ class Game:
             return True
         item = player.play()
         self.__river.append(item)
-        player.ting()
+        player.riichi()
         # 理好牌
         player.sort()
         self.show()
@@ -91,8 +84,8 @@ class Game:
         for i in li:
             if self.if_hu(self.__player[i], self.__river[-1]):
                 self.__river.pop(-1)
-                self.__info += f'{self.__player[n].name} 放炮。'
-                self.__player[n].fangpao = True
+                self.__info += f'{self.__player[n].name} 放铳。'
+                self.__player[n].fangchong = True
                 self.has_hu = True
                 self.__count = i
                 return True
@@ -115,7 +108,7 @@ class Game:
                 self.__river.append(item)
                 # count 指向碰的人下家
                 self.__count = i + 1
-                self.__player[i].ting()
+                self.__player[i].riichi()
                 self.__player[i].sort()
                 self.show()
                 # 再检测打出来的牌有没有胡杠碰吃
@@ -134,7 +127,7 @@ class Game:
             self.__river.append(item)
             # count 指向吃的人下家
             self.__count = n + 1
-            self.__player[n].ting()
+            self.__player[n].riichi()
             self.__player[n].sort()
             self.show()
             # 再检测打出来的牌有没有胡杠碰吃
@@ -142,8 +135,8 @@ class Game:
             return True
         return False
 
-    def if_hu(self, player, item=''):
-        player.get_face_down(self.get_face_down())
+    def if_hu(self, player, item=None):
+        player.get_public(self.refresh_public())
         # 可能自摸
         if player.hu(item):
             self.__info += f'{player.name} 胡啦! '
@@ -151,8 +144,8 @@ class Game:
         else:
             return False
 
-    def if_gang(self, player, item=''):
-        player.get_face_down(self.get_face_down())
+    def if_gang(self, player, item=None):
+        player.get_public(self.refresh_public())
         # 可能自己杠
         if player.gang(item):
             return True
@@ -160,38 +153,35 @@ class Game:
             return False
 
     def if_jiagang(self, player):
-        player.get_face_down(self.get_face_down())
+        player.get_public(self.refresh_public())
         if player.jiagang():
             return True
         else:
             return False
 
     def if_peng(self, player, item):
-        player.get_face_down(self.get_face_down())
+        player.get_public(self.refresh_public())
         if player.peng(item):
             return True
         else:
             return False
 
     def if_chi(self, player, item):
-        player.get_face_down(self.get_face_down())
+        player.get_public(self.refresh_public())
         if player.chi(item):
             return True
         else:
             return False
 
-    def get_face_down(self):
-        hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
-        face_up = copy.deepcopy(self.__river)
+    def refresh_public(self):
+        self.__public = copy.deepcopy(self.__river)
         li = []
         for i in range(4):
-            li.extend(self.__player[i].side)
-        for i in li:
-            for j in i:
-                face_up.extend(j)
-        for i in face_up:
-            hill.remove(i)
-        return hill
+            if self.__player[i].side:
+                li.extend(self.__player[i].side)
+        if li:
+            for i in li:
+                self.__public.extend(i)
 
     def show(self):
         # 清屏
@@ -200,7 +190,7 @@ class Game:
         print('\x1b[20C', end='')
         if self.has_hu and self.__count == 0:
             print('♕\x1b[5C', end='')
-        elif self.__player[0].fangpao:
+        elif self.__player[0].fangchong:
             print('💔\x1b[4C', end='')
         else:
             print('\x1b[6C', end='')
@@ -224,7 +214,7 @@ class Game:
         print('\r')
         if self.has_hu and self.__count == 1:
             print('♕\x1b[1B')
-        elif self.__player[1].fangpao:
+        elif self.__player[1].fangchong:
             print('💔\x1b[1B')
         else:
             print('\x1b[1B')
@@ -247,7 +237,7 @@ class Game:
                     if middle[j] == '🀄':
                         print(middle[j], end='')
                     else:
-                        print(middle[j] + '\x1b[1C', end='')
+                        print(middle[j], end=' ')
             print(f'\x1b[{59 - len(middle) * 2}C', end='')
             if len(tail) == 1:
                 print(tail)
@@ -265,6 +255,7 @@ class Game:
             s1 = len(self.__player[1].side)
             l2 = len(self.__player[3].hand)
             s2 = len(self.__player[3].side)
+            h, t = ' ', ' '
             if s1 > 0:
                 if i < s1:
                     for j in range(s1):
@@ -313,7 +304,7 @@ class Game:
         # 空行
         if self.has_hu and self.__count == 3:
             print('\x1b[1B\x1b[78C♕')
-        elif self.__player[3].fangpao:
+        elif self.__player[3].fangchong:
             print('\x1b[1B\x1b[78C💔')
         else:
             print('\x1b[1B')
@@ -321,9 +312,9 @@ class Game:
         print('\x1b[20C', end='')
         if self.has_hu and self.__count == 2:
             print('♕\x1b[5C', end='')
-        elif self.__player[2].fangpao:
+        elif self.__player[2].fangchong:
             print('💔\x1b[4C', end='')
-        elif self.__player[2].ting_flag:
+        elif self.__player[2].ting:
             print('⚑\x1b[5C', end='')
         else:
             print('\x1b[6C', end='')
@@ -341,7 +332,7 @@ class Game:
             if i != '🀄':
                 print(' ', end='')
         print('\r')
-        time.sleep(0.5)
+        # time.sleep(0.5)
         # time.sleep(0.1)
 
     def start(self):
@@ -349,7 +340,7 @@ class Game:
         j = 0
         while j < 13:
             for i in range(4):
-                self.__player[i].hand.append(self.__hill.pop(self.__hill.index(random.choice(self.__hill))))
+                self.__player[i].hand.append(self.__hill.draw())
             self.show()
             j += 1
         # 理牌
@@ -358,8 +349,8 @@ class Game:
         self.show()
 
     def reset(self, HIDE=True):
-        self.__hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
-        self.__river = []
+        self.__hill.reset()
+        self.__river.clear()
         self.__info = ''
         self.__hide = HIDE
         self.__count = 0
@@ -369,12 +360,12 @@ class Game:
 
 
 if __name__ == "__main__":
-    gamer_name = input('输入你的名字：')
-    P = Player(gamer_name)
+    # gamer_name = input('输入你的名字：')
+    P = Bot('gamer_name')
     # P = AI(gamer_name)
     game_state = True
     hide = True
-    g = Game([AI('Bot 0'), AI('Bot 1'), P, AI('Bot 2')], HIDE=hide)
+    g = Game([Bot('Bot 0'), Bot('Bot 1'), P, Bot('Bot 2')], HIDE=hide)
     while game_state:
         g.game()
         flag = input('输入0结束，输入其他继续。')

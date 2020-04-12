@@ -1,13 +1,14 @@
-from Player import Bot
+from Player import *
 import random
 import copy
+
 
 WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"  # 0-8
 TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"  # 9-17
 TONG = "🀙🀚🀛🀜🀝🀞🀟🀠🀡"  # 18-26
 ELSE = "🀀🀁🀂🀃🀄🀅🀆"  # 27-33
 DICT = dict(zip(WAN + TIAO + TONG + ELSE, range(34)))
-hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
+HILL = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
 
 
 class AI(Bot):
@@ -31,7 +32,7 @@ class AI(Bot):
             hand.append(i)
         if m > self.last_ting_count:
             self.last_ting_count = m
-        if self.ting_flag:
+        if self.ting:
             return self.hand.index(choose)
         hand_list = [DICT[i] for i in self.hand]
         hand_list.sort()
@@ -97,7 +98,7 @@ class AI(Bot):
             k = random.random()
             if k >= 0.1:
                 choose = random.choice(l_Z)
-                return self.hand.index(self.get_key(DICT, choose)[0])
+                return self.hand.index(self.get_key(DICT, choose))
         # 去顺子
         choose_list1 = []
         r_shunzi(l_W)
@@ -140,7 +141,7 @@ class AI(Bot):
             choose = random.choice(choose_list1)
         else:
             choose = random.choice(hand_list)
-        return self.hand.index(self.get_key(DICT, choose)[0])
+        return self.hand.index(self.get_key(DICT))
 
     def action_hu(self):
         return True
@@ -213,11 +214,9 @@ class AI(Bot):
 
     def get_ting_list(self, hand, hill):
         li = []
-        for i in set(hill):
+        for i in PaiList(hill).set():
             hand.append(i)
-            hand_list = [DICT[i] for i in hand]
-            hand_list.sort()
-            if self.hulemei(hand_list):
+            if self.hulemei(hand):
                 li.append(i)
             hand.remove(i)
         for i in range(len(li) - 1):
@@ -227,3 +226,10 @@ class AI(Bot):
                     li[j] = li[j + 1]
                     li[j + 1] = tmp
         return li
+
+
+if __name__ == '__main__':
+    p = AI()
+    p.hand = '🀋 🀏 🀑 🀒 🀕 🀗 🀘 🀙 🀛 🀝 🀡 🀁 🀆 🀈'.split(' ')
+    print(p.hand)
+    print(p.hu())

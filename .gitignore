@@ -50,3 +50,5 @@ Temporary Items
 /.idea
 /__pycache__
 test.py
+/backup
+

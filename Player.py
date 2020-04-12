@@ -1,6 +1,6 @@
-import random
 import copy
 import time
+from Basic import *
 
 WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"  # 0-8
 TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"  # 9-17
@@ -27,11 +27,12 @@ class Player:
         if NAME == '':
             NAME = 'Player'
         self.__name = NAME
-        self.hand = []
+        self.public = PaiList()
+        self.hand = PaiList()
         self.side = []
-        self.ting_flag = False
+        self.ting = False
         self.ting_item = ''
-        self.fangpao = False
+        self.fangchong = False
         self.hula = False
         self.face_down = []
 
@@ -39,44 +40,46 @@ class Player:
         item = self.action_play()
         return self.hand.pop(item)
 
-    def hu(self, item):
-        if item != '':  # 自摸不需要加一张
+    def hu(self, item=None):
+        if item is not None:  # 自摸不需要加一张
             self.hand.append(item)
-        hand_list = [DICT[i] for i in self.hand]
-        hand_list.sort()
-        if self.hulemei(hand_list):
+        temp = copy.deepcopy(self.hand)
+        if self.hulemei(temp):
             if self.action_hu():
                 self.hula = True
                 return True
-        if item != '':
+        if item is not None:
             self.hand.remove(item)
             self.sort()
         return False
 
-    def ting(self):
-        li = self.check_ting(self.face_down)
+    def riichi(self):
+        li = self.check_ting(self.public)
         if len(li) > 0:
-            self.ting_flag = True
+            self.ting = True
             # if self.action_ting():
             return True
         else:
-            self.ting_flag = False
+            self.ting = False
             return False
 
     def gang(self, item):
-        if item != '':
+        if item is not None:
             if self.hand.count(item) == 3:
                 if self.action_chigang(item):
-                    self.side.append(item * 4)
+                    block = PaiList(
+                        [copy.deepcopy(item), copy.deepcopy(item), copy.deepcopy(item), copy.deepcopy(item)])
+                    self.side.append(block)
                     self.hand.remove(item)
                     self.hand.remove(item)
                     self.hand.remove(item)
                     return True
         else:
-            for i in self.hand:
+            for i in self.hand.set():
                 if self.hand.count(i) == 4:
                     if self.action_zigang(i):
-                        self.side.append(i * 4)
+                        block = PaiList([copy.deepcopy(i), copy.deepcopy(i), copy.deepcopy(i), copy.deepcopy(i)])
+                        self.side.append(block)
                         self.hand.remove(i)
                         self.hand.remove(i)
                         self.hand.remove(i)
@@ -85,12 +88,12 @@ class Player:
         return False
 
     def jiagang(self):
-        if len(self.side) != 0:
-            for i in self.hand:
+        if self.side:
+            for i in self.hand.set():
                 for j in range(len(self.side)):
                     if self.side[j].count(i) == 3:
                         if self.action_jiagang(i, j):
-                            self.side[j] += i
+                            self.side[j].append(i)
                             self.hand.remove(i)
                             return True
         return False
@@ -98,7 +101,8 @@ class Player:
     def peng(self, item):
         if self.hand.count(item) == 2:
             if self.action_peng(item):
-                self.side.append(item * 3)
+                block = PaiList([copy.deepcopy(item), copy.deepcopy(item), copy.deepcopy(item)])
+                self.side.append(block)
                 self.hand.remove(item)
                 self.hand.remove(item)
                 return True
@@ -107,109 +111,103 @@ class Player:
     def chi(self, item):
         l_chi = []
         can_chi = False
-        it = DICT[item]
-        hand_list = [DICT[i] for i in self.hand]
+        n = item.n
         # 字牌没有吃
-        if it >= 27:
+        if item.kind == 'Y' or item.kind == 'F':
             return False
         else:
             # 边张只有一种吃法
-            if it == 0 or it == 9 or it == 18:
-                if it + 1 in hand_list and it + 2 in hand_list:
-                    l_chi.append([it + 1, it + 2])
+            if n == 1:
+                if item + 1 in self.hand and item + 2 in self.hand:
+                    l_chi.append(PaiList([item + 1, item + 2]))
                     can_chi = True
-            elif it == 8 or it == 17 or it == 26:
-                if it - 1 in hand_list and it - 2 in hand_list:
-                    l_chi.append([it - 2, it - 1])
+            elif n == 9:
+                if item - 1 in self.hand and item - 2 in self.hand:
+                    l_chi.append(PaiList([item - 2, item - 1]))
                     can_chi = True
             # 边二张有两种吃法
-            elif it == 1 or it == 10 or it == 19:
-                if it + 1 in hand_list and it + 2 in hand_list:
-                    l_chi.append([it + 1, it + 2])
+            elif n == 2:
+                if item + 1 in self.hand and item + 2 in self.hand:
+                    l_chi.append(PaiList([item + 1, item + 2]))
                     can_chi = True
-                if it - 1 in hand_list and it + 1 in hand_list:
-                    l_chi.append([it - 1, it + 1])
+                if item - 1 in self.hand and item + 1 in self.hand:
+                    l_chi.append(PaiList([item - 1, item + 1]))
                     can_chi = True
-            elif it == 7 or it == 16 or it == 25:
-                if it - 1 in hand_list and it - 2 in hand_list:
-                    l_chi.append([it - 1, it - 2])
+            elif n == 8:
+                if item - 1 in self.hand and item - 2 in self.hand:
+                    l_chi.append(PaiList([item - 2, item - 1]))
                     can_chi = True
-                if it - 1 in hand_list and it + 1 in hand_list:
-                    l_chi.append([it - 1, it + 1])
+                if item - 1 in self.hand and item + 1 in self.hand:
+                    l_chi.append(PaiList([item - 1, item + 1]))
                     can_chi = True
             # 一般张有三种吃法
             else:
-                if it - 1 in hand_list and it - 2 in hand_list:
-                    l_chi.append([it - 2, it - 1])
+                if item - 1 in self.hand and item - 2 in self.hand:
+                    l_chi.append(PaiList([item - 2, item - 1]))
                     can_chi = True
-                if it - 1 in hand_list and it + 1 in hand_list:
-                    l_chi.append([it - 1, it + 1])
+                if item - 1 in self.hand and item + 1 in self.hand:
+                    l_chi.append(PaiList([item - 1, item + 1]))
                     can_chi = True
-                if it + 1 in hand_list and it + 2 in hand_list:
-                    l_chi.append([it + 1, it + 2])
+                if item + 1 in self.hand and item + 2 in self.hand:
+                    l_chi.append(PaiList([item + 1, item + 2]))
                     can_chi = True
             if can_chi:
-                if self.action_chi(it, l_chi):
+                if self.action_chi(n, l_chi):
                     if len(l_chi) == 1:
                         l_chi = l_chi[0]
                         for i in l_chi:
-                            self.hand.remove(self.get_key(DICT, i)[0])
-                        l_chi.append(it)
-                        l_chi.sort()
-                        block = ''
-                        for i in l_chi:
-                            block += self.get_key(DICT, i)[0]
-                        self.side.append(block)
+                            self.hand.remove(i)
+                        l_chi.append(item)
+                        l_chi.sorted()
+                        self.side.append(l_chi)
                     else:
                         n = self.action_chiwhich(l_chi)
                         l_chi = l_chi[n]
                         for i in l_chi:
-                            self.hand.remove(self.get_key(DICT, i)[0])
-                        l_chi.append(it)
-                        l_chi.sort()
-                        block = ''
-                        for i in l_chi:
-                            block += self.get_key(DICT, i)[0]
-                        self.side.append(block)
+                            self.hand.remove(i)
+                        l_chi.append(item)
+                        l_chi.sorted()
+                        self.side.append(l_chi)
                     return True
         return False
 
     def sort(self):
-        for i in range(len(self.hand) - 1):
-            for j in range(len(self.hand) - i - 1):
-                if DICT[self.hand[j]] > DICT[self.hand[j + 1]]:
-                    tmp = self.hand[j]
-                    self.hand[j] = self.hand[j + 1]
-                    self.hand[j + 1] = tmp
+        p = PaiList([i for i in self.hand if i.kind == 'P']).sorted()
+        s = PaiList([i for i in self.hand if i.kind == 'S']).sorted()
+        m = PaiList([i for i in self.hand if i.kind == 'M']).sorted()
+        f = PaiList([i for i in self.hand if i.kind == 'F']).sorted()
+        y = PaiList([i for i in self.hand if i.kind == 'Y']).sorted()
+        self.hand.clear()
+        self.hand.extend(p)
+        self.hand.extend(s)
+        self.hand.extend(m)
+        self.hand.extend(f)
+        self.hand.extend(y)
 
     def check(self):
-        hand_list = [DICT[i] for i in self.hand]
-        hand_list.sort()
-        if self.hulemei(hand_list):
+        hand = copy.deepcopy(self.hand)
+        if self.hulemei(hand):
             return True
         else:
             return False
 
-    def check_ting(self, h):
-        li = []
-        for i in set(h):
-            self.hand.append(i)
-            hand_list = [DICT[i] for i in self.hand]
-            hand_list.sort()
-            if self.hulemei(hand_list):
+    def check_ting(self, public):
+        h = Hill().hill
+        for i in public:
+            h.remove(i)
+        li = PaiList()
+        hand = copy.deepcopy(self.hand)
+        for i in h.sorted():
+            hand.append(i)
+            if self.hulemei(hand):
                 li.append(i)
-            self.hand.remove(i)
+            hand.remove(i)
         self.sort()
-        for i in range(len(li) - 1):
-            for j in range(len(li) - i - 1):
-                if DICT[li[j]] > DICT[li[j + 1]]:
-                    tmp = li[j]
-                    li[j] = li[j + 1]
-                    li[j + 1] = tmp
+        li.sorted()
         return li
 
-    def get_key(self, dct, v):
-        return list(filter(lambda x: dct[x] == v, dct))
+    def get_face(self, v):
+        return list(filter(lambda x: x.n == v, self.hand))[0]
 
     def has_quetou(self, l_q):
         temp = copy.deepcopy(l_q)
@@ -221,24 +219,26 @@ class Player:
                     return True
                 elif self.has_shunzi(temp):
                     return True
-                else:
-                    temp = copy.deepcopy(l_q)
         return False
 
     def has_shunzi(self, l_s):
         if len(l_s) % 3 != 0:
             return False
         temp = copy.deepcopy(l_s)
-        L = len(l_s)
+        le = len(l_s)
         # 如果进来的时候只有3个 直接判断
-        if L == 3:
-            if (temp[0] == temp[1] and temp[0] == temp[2]) or (temp[0] == temp[1] - 1 and temp[0] == temp[2] - 2):
+        if le == 3:
+            if temp[0] == temp[1] and temp[0] == temp[2]:
+                return True
+            elif temp[0].kind == 'Y' or temp[0].kind == 'F':
+                return False
+            elif temp[0] == temp[1] - 1 and temp[0] == temp[2] - 2:
                 return True
             else:
                 return False
         # 其他情况先去掉所有刻子
         count = 0
-        while count < L - 2:
+        while count < le - 2:
             i = count
             if l_s[i] == l_s[i + 1] and l_s[i] == l_s[i + 2]:
                 temp.remove(l_s[i])
@@ -251,7 +251,7 @@ class Player:
         if len(temp) == 0:
             return True
         # 如果字牌有不是刻子的 不满足
-        elif temp[0] >= 27:
+        elif temp[0].kind == 'Y' or temp[0].kind == 'F':
             return False
         # 如果正好剩下3个是顺子
         elif len(temp) == 3:
@@ -261,8 +261,7 @@ class Player:
                 return False
         # 如果剩下超过3个 去重先去掉最小的一组
         elif len(temp) > 3:
-            s = list(set(temp))
-            s.sort()
+            s = PaiList(PaiList(temp).set()).sorted()
             if s[0] == s[1] - 1 and s[0] == s[2] - 2:
                 temp.remove(s[0])
                 temp.remove(s[1])
@@ -272,53 +271,46 @@ class Player:
                     return True
         return False
 
-    def hulemei(self, hand_list):
+    def hulemei(self, hand):
         # TODO 特殊牌型胡牌没写
-        l_W = []
-        l_S = []
-        l_P = []
-        l_Z = []
-        for i in hand_list:
-            if 0 <= i <= 8:
-                l_W.append(i)
-            elif 9 <= i <= 17:
-                l_S.append(i)
-            elif 18 <= i <= 26:
-                l_P.append(i)
-            else:
-                l_Z.append(i)
-        L = [l_W, l_S, l_P, l_Z]
-        # print(L)
+        p = PaiList([i for i in hand if i.kind == 'P']).sorted()
+        s = PaiList([i for i in hand if i.kind == 'S']).sorted()
+        m = PaiList([i for i in hand if i.kind == 'M']).sorted()
+        f = PaiList([i for i in hand if i.kind == 'F']).sorted()
+        y = PaiList([i for i in hand if i.kind == 'Y']).sorted()
+        L = [p, s, m, f, y]
         l_que_tou = []
         for i in L:
             le = len(i)
-            if le == 1 or le == 4 or le == 7 or le == 10 or le == 13:
+            if le == 0:
+                continue
+            elif le == 1 or le == 4 or le == 7 or le == 10 or le == 13:
                 return False
             elif le == 2 or le == 5 or le == 8 or le == 11 or le == 14:
                 l_que_tou.append(i)
             else:
-                if le > 0:
-                    if not self.has_shunzi(i):
-                        return False
-                else:
-                    continue
+                if not self.has_shunzi(i):
+                    return False
+                continue
         if len(l_que_tou) != 1:
             return False
         if not self.has_quetou(l_que_tou[0]):
             return False
         return True
 
-    def get_face_down(self, face_down):
-        self.face_down = face_down
-        for i in self.hand:
-            self.face_down.remove(i)
+    def get_public(self, public=None):
+        if public is None:
+            public = PaiList()
+        self.public = public
+        self.public.extend(self.hand)
 
     def restart(self):
-        self.hand = []
+        self.hand.clear()
         self.side = []
-        self.ting_flag = False
+        self.public.clear()
+        self.ting = False
         self.ting_item = ''
-        self.fangpao = False
+        self.fangchong = False
         self.hula = False
 
     @property
@@ -397,8 +389,8 @@ class Player:
         for i in range(len(l_chi)):
             print(f'{i + 1}-', end='')
             for j in l_chi[i]:
-                print(f'{self.get_key(DICT, j)[0]}', end='')
-                if self.get_key(DICT, j)[0] != '🀄':
+                print(f'{self.get_key(j)}', end='')
+                if self.get_key(j) != '🀄':
                     print(' ', end='')
             print('   ', end='')
         n = ask_input([i + 1 for i in range(len(l_chi))], '怎么吃:') - 1
@@ -460,18 +452,23 @@ class Bot(Player):
 
 
 if __name__ == '__main__':
-    p = Bot()
+    a = P(1)
+    b = PaiList([copy.deepcopy(a), copy.deepcopy(a)])
+    b[0] = P(2)
+    del a
+    print(b)
+    # p = Bot()
     # for i in range(20):
     #     p.hand = random.choices(hill, k=14)
     # p.hand = ['🀈', '🀈', '🀉', '🀊', '🀋', '🀖', '🀗', '🀘', '🀛', '🀜', '🀝', '🀃', '🀃', '🀃']
-    p.hand = ['🀉', '🀉', '🀑', '🀒', '🀓', '🀔', '🀖', '🀛', '🀜', '🀝', '🀆', '🀆', '🀆', '🀕']
+    # p.hand = ['🀉', '🀉', '🀑', '🀒', '🀓', '🀔', '🀖', '🀛', '🀜', '🀝', '🀆', '🀆', '🀆', '🀕']
     # p.hand = ['🀈', '🀈', '🀍', '🀍', '🀎', '🀎', '🀏', '🀙', '🀚', '🀛', '🀟', '🀟', '🀟']  # , '🀏']
     # p.hand = ['🀌', '🀎', '🀒', '🀓', '🀓', '🀔', '🀕', '🀘', '🀘', '🀑']
     # for i in range(10):
     # p.hand = ['🀐', '🀑', '🀒', '🀖', '🀘', '🀞', '🀟', '🀠', '🀀', '🀀', '🀀', '🀆', '🀆']  # , '🀆']
     #     p.play()
     #     print(p.hand)
-    # print(p.ting(hill))
-    print(p.hu(''))
+    # print(p.riichi(hill))
+    # print(p.hu())
     # print(p.hand)
     # print(hulemei([5, 5, 5,6,6]))
