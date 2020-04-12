@@ -1,6 +1,6 @@
 import copy
 import time
-from Basic import *
+from PaiBasic import *
 
 WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"  # 0-8
 TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"  # 9-17
@@ -454,6 +454,7 @@ class Bot(Player):
 if __name__ == '__main__':
     a = P(1)
     b = PaiList([copy.deepcopy(a), copy.deepcopy(a)])
+
     b[0] = P(2)
     del a
     print(b)

@@ -360,8 +360,8 @@ class Game:
 
 
 if __name__ == "__main__":
-    # gamer_name = input('输入你的名字：')
-    P = Bot('gamer_name')
+    gamer_name = input('输入你的名字：')
+    P = Player(gamer_name)
     # P = AI(gamer_name)
     game_state = True
     hide = True

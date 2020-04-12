@@ -279,12 +279,14 @@ class PaiList:
 
 
 if __name__ == '__main__':
-    # l = PaiList([P(1), P(2), P(2)])
+    l = PaiList([P(1), P(2), P(3), P(4), P(5), P(6), P(7), P(8), P(9)])
+    print(l)
+    print(random.choice(l))
     # print(l[0])
-    a = PaiList()
-    b = []
-    b.append(a)
-    print(len(b))
+    # a = PaiList()
+    # b = []
+    # b.append(a)
+    # print(len(b))
     # a = P(1)
     # alist = PaiList([a + 1, a + 2, a + 3])
     # alist.remove(P(3))
