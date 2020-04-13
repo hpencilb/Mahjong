@@ -34,7 +34,7 @@ class Player:
         self.ting_item = ''
         self.fangchong = False
         self.hula = False
-        self.face_down = []
+        self.face_down = PaiList()
 
     def play(self):
         item = self.action_play()
@@ -54,7 +54,7 @@ class Player:
         return False
 
     def riichi(self):
-        li = self.check_ting(self.public)
+        li = self.check_ting()
         if len(li) > 0:
             self.ting = True
             # if self.action_ting():
@@ -152,7 +152,7 @@ class Player:
                     l_chi.append(PaiList([item + 1, item + 2]))
                     can_chi = True
             if can_chi:
-                if self.action_chi(n, l_chi):
+                if self.action_chi(item, l_chi):
                     if len(l_chi) == 1:
                         l_chi = l_chi[0]
                         for i in l_chi:
@@ -178,9 +178,9 @@ class Player:
         f = PaiList([i for i in self.hand if i.kind == 'F']).sorted()
         y = PaiList([i for i in self.hand if i.kind == 'Y']).sorted()
         self.hand.clear()
-        self.hand.extend(p)
-        self.hand.extend(s)
         self.hand.extend(m)
+        self.hand.extend(s)
+        self.hand.extend(p)
         self.hand.extend(f)
         self.hand.extend(y)
 
@@ -191,10 +191,8 @@ class Player:
         else:
             return False
 
-    def check_ting(self, public):
-        h = Hill().hill
-        for i in public:
-            h.remove(i)
+    def check_ting(self):
+        h = self.face_down
         li = PaiList()
         hand = copy.deepcopy(self.hand)
         for i in h.sorted():
@@ -219,6 +217,7 @@ class Player:
                     return True
                 elif self.has_shunzi(temp):
                     return True
+            temp = copy.deepcopy(l_q)
         return False
 
     def has_shunzi(self, l_s):
@@ -303,11 +302,16 @@ class Player:
             public = PaiList()
         self.public = public
         self.public.extend(self.hand)
+        h = Hill().hill
+        for i in self.public:
+            h.remove(i)
+        self.face_down = h
 
     def restart(self):
         self.hand.clear()
         self.side = []
         self.public.clear()
+        self.face_down.clear()
         self.ting = False
         self.ting_item = ''
         self.fangchong = False

@@ -53,7 +53,10 @@ class P(Pai):
         super().__init__()
         self.kind = 'P'
         self.n = n
-        self.face = "🀙🀚🀛🀜🀝🀞🀟🀠🀡"[n - 1]
+        if 1 <= n <= 9:
+            self.face = "🀙🀚🀛🀜🀝🀞🀟🀠🀡"[n - 1]
+        else:
+            self.face = "🀫"
         self.is_shupai = True
         if n == 1 or n == 9:
             self.is_yaojiu = True
@@ -73,7 +76,10 @@ class S(Pai):
         super().__init__()
         self.kind = 'S'
         self.n = n
-        self.face = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"[n - 1]
+        if 1 <= n <= 9:
+            self.face = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"[n - 1]
+        else:
+            self.face = "🀫"
         self.is_shupai = True
         if n == 1 or n == 9:
             self.is_yaojiu = True
@@ -93,7 +99,10 @@ class M(Pai):
         super().__init__()
         self.kind = 'M'
         self.n = n
-        self.face = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"[n - 1]
+        if 1 <= n <= 9:
+            self.face = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"[n - 1]
+        else:
+            self.face = "🀫"
         self.is_shupai = True
         if n == 1 or n == 9:
             self.is_yaojiu = True
@@ -182,7 +191,7 @@ class Hill:
         return [i for i in self.__hill if i.is_laotou]
 
     def reset(self):
-        self.__hill = []
+        self.__hill.clear()
         for i in range(4):
             for j in range(9):
                 self.__hill.append(P(j + 1))

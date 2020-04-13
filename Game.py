@@ -72,6 +72,7 @@ class Game:
             return True
         item = player.play()
         self.__river.append(item)
+        player.get_public(self.refresh_public())
         player.riichi()
         # 理好牌
         player.sort()
@@ -108,6 +109,7 @@ class Game:
                 self.__river.append(item)
                 # count 指向碰的人下家
                 self.__count = i + 1
+                self.__player[i].get_public(self.refresh_public())
                 self.__player[i].riichi()
                 self.__player[i].sort()
                 self.show()
@@ -127,6 +129,7 @@ class Game:
             self.__river.append(item)
             # count 指向吃的人下家
             self.__count = n + 1
+            self.__player[n].get_public(self.refresh_public())
             self.__player[n].riichi()
             self.__player[n].sort()
             self.show()
@@ -332,7 +335,7 @@ class Game:
             if i != '🀄':
                 print(' ', end='')
         print('\r')
-        # time.sleep(0.5)
+        time.sleep(0.5)
         # time.sleep(0.1)
 
     def start(self):
@@ -365,7 +368,7 @@ if __name__ == "__main__":
     # P = AI(gamer_name)
     game_state = True
     hide = True
-    g = Game([Bot('Bot 0'), Bot('Bot 1'), P, Bot('Bot 2')], HIDE=hide)
+    g = Game([AI('Bot 0'), AI('Bot 1'), P, AI('Bot 2')], HIDE=hide)
     while game_state:
         g.game()
         flag = input('输入0结束，输入其他继续。')
