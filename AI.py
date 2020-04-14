@@ -197,14 +197,7 @@ class AI(Bot):
         return li
 
     def restart(self):
-        self.hand.clear()
-        self.side = []
-        self.public.clear()
-        self.face_down.clear()
-        self.ting = False
-        self.ting_item = ''
-        self.fangchong = False
-        self.hula = False
+        super().restart()
         self.last_ting_count = 0
         self.chi_num = 0
 

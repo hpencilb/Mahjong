@@ -211,8 +211,10 @@ class PaiList:
 
     def __str__(self):
         rep = ''
-        for i in self.li:
-            rep += str(i)
+        for i in range(len(self.li)):
+            rep += str(self.li[i])
+            if i != len(self.li) - 1 and self.li[i] != '🀄':
+                rep += ' '
         return rep
 
     def __iter__(self):
@@ -288,7 +290,7 @@ class PaiList:
 
 
 if __name__ == '__main__':
-    l = PaiList([P(1), P(2), P(3), P(4), P(5), P(6), P(7), P(8), P(9)])
+    l = PaiList([P(1), Y(2), P(2), P(3), P(4), Y(1), P(5), P(6), P(7), Y(3), P(8), P(9)])
     print(l)
     print(random.choice(l))
     # print(l[0])

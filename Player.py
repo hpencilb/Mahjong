@@ -2,13 +2,6 @@ import copy
 import time
 from PaiBasic import *
 
-WAN = "🀇🀈🀉🀊🀋🀌🀍🀎🀏"  # 0-8
-TIAO = "🀐🀑🀒🀓🀔🀕🀖🀗🀘"  # 9-17
-TONG = "🀙🀚🀛🀜🀝🀞🀟🀠🀡"  # 18-26
-ELSE = "🀀🀁🀂🀃🀄🀅🀆"  # 27-33
-DICT = dict(zip(WAN + TIAO + TONG + ELSE, range(34)))
-hill = list(WAN * 4 + TIAO * 4 + TONG * 4 + ELSE * 4)
-
 
 def ask_input(index, string):
     while True:
@@ -29,6 +22,7 @@ class Player:
         self.__name = NAME
         self.public = PaiList()
         self.hand = PaiList()
+        self.river = PaiList()
         self.side = []
         self.ting = False
         self.ting_item = ''
@@ -37,8 +31,10 @@ class Player:
         self.face_down = PaiList()
 
     def play(self):
-        item = self.action_play()
-        return self.hand.pop(item)
+        index = self.action_play()
+        item = self.hand.pop(index)
+        self.river.append(item)
+        return item
 
     def hu(self, item=None):
         if item is not None:  # 自摸不需要加一张
@@ -184,6 +180,10 @@ class Player:
         self.hand.extend(f)
         self.hand.extend(y)
 
+    def river_last_pop(self):
+        if len(self.river) > 0:
+            return self.river.pop(-1)
+
     def check(self):
         hand = copy.deepcopy(self.hand)
         if self.hulemei(hand):
@@ -309,6 +309,7 @@ class Player:
 
     def restart(self):
         self.hand.clear()
+        self.river.clear()
         self.side = []
         self.public.clear()
         self.face_down.clear()
@@ -391,12 +392,7 @@ class Player:
     def action_chiwhich(self, l_chi):
         print('多种吃法 ', end='')
         for i in range(len(l_chi)):
-            print(f'{i + 1}-', end='')
-            for j in l_chi[i]:
-                print(f'{self.get_key(j)}', end='')
-                if self.get_key(j) != '🀄':
-                    print(' ', end='')
-            print('   ', end='')
+            print(f'{i + 1}-{l_chi[i]}', end='     ')
         n = ask_input([i + 1 for i in range(len(l_chi))], '怎么吃:') - 1
         return n
 
