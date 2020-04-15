@@ -24,7 +24,11 @@ class Player:
         self.hand = PaiList()
         self.river = PaiList()
         self.side = []
+        self.wind = None
+        self.table_wind = None
         self.ting = False
+        self.riichi_flag = False
+        self.riichi_list = []
         self.ting_item = ''
         self.fangchong = False
         self.hula = False
@@ -307,6 +311,10 @@ class Player:
             h.remove(i)
         self.face_down = h
 
+    def get_wind(self, W, n):
+        self.table_wind = W
+        self.wind = F(n + 1)
+
     def restart(self):
         self.hand.clear()
         self.river.clear()
@@ -344,8 +352,8 @@ class Player:
         else:
             return False
 
-    def action_ting(self):
-        flag = ask_input(['y', 'n'], '能听，听不? (y/n):')
+    def action_riichi(self):
+        flag = ask_input(['y', 'n'], '能立直，立直不? (y/n):')
         if flag == 'y':
             return True
         else:
